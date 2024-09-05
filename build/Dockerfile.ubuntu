@@ -64,11 +64,22 @@ RUN \
        && getent group ${USER_NAME} \
            || groupadd -g ${USER_UID} ${USER_NAME} \
        && id -u ${USER_NAME} &>/dev/null \
-           || useradd -m -l -s /bin/bash -u ${USER_UID} -g ${USER_UID} ${USER_NAME} \
+           || useradd -m -l -s /bin/bash \
+              -u ${USER_UID} \
+              -g ${USER_UID} \
+              ${USER_NAME} \
        && usermod -aG sudo ${USER_NAME} \
        && echo "${USER_NAME}:${USER_PASSWORD}" | chpasswd \ 
        && grep -q "^${USER_NAME} ALL=(ALL) NOPASSWD: ALL" /etc/sudoers \
            || echo "${USER_NAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+RUN \
+  mkdir /run/user/${USER_UID} \
+  chown -R ${USER_UID}:${USER_UID} /run/user/${USER_UID} \ 
+  chmod 0700 /run/user/${USER_UID}
+
+ENV \
+  XDG_RUNTIME_DIR=/run/user/${USER_UID}
 
 # Switch to non-root user.
 USER ${USER_NAME}
