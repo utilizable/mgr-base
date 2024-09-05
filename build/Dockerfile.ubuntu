@@ -1,0 +1,77 @@
+############################################################
+# Copyright (c) 2024 Utilizable 
+# Released under the MIT license
+# ----------------------------------------------------------
+# STRUCTURE:
+#
+# ├─utilizable/mgr-base
+#   ├─utilizable/mgr-*
+#
+############################################################
+
+# Define build-time arguments.
+ARG \
+ DISTRIBUTION=24.04
+    
+FROM ubuntu:${DISTRIBUTION}
+
+# Define build-time arguments.
+ARG \
+ DEBIAN_FRONTEND=noninteractive
+
+# Configure locale 
+ARG \
+  LANG="en_US.UTF-8" \
+  LC_ALL="en_US.UTF-8" \
+  LANGUAGE="en_US:en" \
+  TZ=UTC
+
+RUN \
+    echo "**** Update apt database ****" \
+        && dpkg --add-architecture i386 \
+        && apt-get update \
+    && \
+    echo "**** Install Tools ****" \
+        && apt-get install --no-install-recommends -y \
+           apt-utils \
+           locales \
+           ssl-cert \
+           sudo \
+           udev \
+           tzdata \
+    && \
+    echo "**** Set locale and timezone ****" \ 
+        && locale-gen ${LANG} \
+        && ln -snf "/usr/share/zoneinfo/${TZ}" /etc/localtime \
+        && echo "${TZ}" > /etc/timezone \
+    && \
+    echo "**** Section cleanup ****" \
+       && apt-get clean autoclean -y \
+       && apt-get autoremove -y \
+       && rm -rf \
+           /var/lib/apt/lists/* \
+           /var/tmp/* \
+           /tmp/*
+
+# Configure user 
+ARG \
+ USER_NAME=ubuntu \
+ USER_PASSWORD=ubuntu \
+ USER_UID=1000
+
+RUN \
+    echo "**** Create a non-root user with sudo privileges ****" \     
+       && getent group ${USER_NAME} \
+           || groupadd -g ${USER_UID} ${USER_NAME} \
+       && id -u ${USER_NAME} &>/dev/null \
+           || useradd -m -l -s /bin/bash -u ${USER_UID} -g ${USER_UID} ${USER_NAME} \
+       && usermod -aG sudo ${USER_NAME} \
+       && echo "${USER_NAME}:${USER_PASSWORD}" | chpasswd \ 
+       && grep -q "^${USER_NAME} ALL=(ALL) NOPASSWD: ALL" /etc/sudoers \
+           || echo "${USER_NAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Switch to non-root user.
+USER ${USER_NAME}
+
+# Execute bash as root for futher installations.
+SHELL [ "/usr/bin/sudo", "--", "/bin/bash", "-c" ]
