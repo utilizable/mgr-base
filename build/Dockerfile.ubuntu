@@ -71,12 +71,13 @@ RUN \
        && usermod -aG sudo ${USER_NAME} \
        && echo "${USER_NAME}:${USER_PASSWORD}" | chpasswd \ 
        && grep -q "^${USER_NAME} ALL=(ALL) NOPASSWD: ALL" /etc/sudoers \
-           || echo "${USER_NAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
+           || echo "${USER_NAME} ALL=(ALL) NOPASSWD: ALL" \
+              >> /etc/sudoers
 RUN \
-  mkdir /run/user/${USER_UID} \
-  chown -R ${USER_UID}:${USER_UID} /run/user/${USER_UID} \ 
-  chmod 0700 /run/user/${USER_UID}
+    echo "**** Configure XDG_RUNTIME_DIR ****" \     
+      && mkdir /run/user/${USER_UID} \
+      && chown -R ${USER_UID}:${USER_UID} /run/user/${USER_UID} \
+      && chmod 0700 /run/user/${USER_UID}
 
 ENV \
   XDG_RUNTIME_DIR=/run/user/${USER_UID}
