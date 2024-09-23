@@ -86,4 +86,4 @@ ENV \
 USER ${USER_NAME}
 
 # Execute bash as root for futher installations.
-SHELL [ "/usr/bin/sudo", "--", "/bin/bash", "-c" ]
+SHELL [ "/usr/bin/sudo", "-E", "--", "/bin/bash", "-c" ]
